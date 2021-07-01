@@ -4,7 +4,7 @@ class Indent:
     def __init__(self, format_type: str, content: str):
         self.content = content
 
-        if format_type in self.FORMATS:
+        if format_type in self.FORMAT_TYPES:
             self.format_type = format_type
         else:
             raise Exception(f"Indent haven`t this format: {format}")

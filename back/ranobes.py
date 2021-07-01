@@ -50,7 +50,16 @@ class Ranobes:
         chapters_links = []
 
         for link in chapters_pages:
-            chapters_links += self._get_page_chapters_links(link)
+            data = requests.get(link, headers=self.HEADERS)
+            bs = BeautifulSoup(data.text, "html.parser")
+
+            chapters_links = []
+            chapters_div = bs.find_all("div", {"class": "cat_block cat_line"})
+
+            for div in chapters_div:
+                chapters_links.append(div.a["href"])
+
+            chapters_links += chapters_links[::-1]
 
         return chapters_links
 
@@ -73,18 +82,6 @@ class Ranobes:
                 chapters_pages.append(next)
 
         return chapters_pages[::-1]
-
-    def _get_page_chapters_links(self, link: str):
-        data = requests.get(link, headers=self.HEADERS)
-        bs = BeautifulSoup(data.text, "html.parser")
-
-        chapters_links = []
-        chapters_div = bs.find_all("div", {"class": "cat_block cat_line"})
-
-        for div in chapters_div:
-            chapters_links.append(div.a["href"])
-
-        return chapters_links[::-1]
 
     def _get_page_content(self, content: BeautifulSoup) -> str:
         """get all chapter content

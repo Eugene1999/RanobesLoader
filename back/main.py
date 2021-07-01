@@ -3,7 +3,7 @@ from typing import Optional
 from fastapi import FastAPI
 from pydantic import BaseModel
 
-from ranobes import get_book
+from ranobes import Ranobes, get_book
 
 app = FastAPI()
 
@@ -38,6 +38,7 @@ async def read_item(item_id: str, q: Optional[str] = None):
 
 @app.post("/download/")
 async def update_item(book: BookLink):
-    b = get_book(**book.dict())
+    ranobe = Ranobes(book.link)
+    b = ranobe.get_book()
 
     return b.txt

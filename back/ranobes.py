@@ -15,14 +15,18 @@ class Ranobes:
             3. Async download all chapters
     """
 
+    HEADERS = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/75.0.3770.100 Safari/537.36"
+    }
+
     def __init__(self, link: str):
         if not link.startswith("https://ranobes.com/"):
             raise Exception("Invalid link: it must be https://ranobes.com/ link!")
 
-        self.chapters_link = self._get_chapters_link(link)
-        self.chapters = self._get_chapters(self.chapters_link)
+        self.base_link = self._get_base_link_path(link)
+        self.chapters_links = self._get_chapters_links()
 
-    def _get_chapters_link(self, link: str):
+    def _get_base_link_path(self, link: str):
         LEN_TYPES = {8: "contents", 5: "main", 6: "chapter"}
         type = LEN_TYPES.get(len(link.split("/")))
         # TODO make it via regular expressions
@@ -41,8 +45,46 @@ class Ranobes:
         else:
             raise Exception("Uncorrect link: it must be refers to specific title link")
 
-    def _get_chapters(self, chapters_link):
-        pass
+    def _get_chapters_links(self):
+        chapters_pages = self._get_chapters_pages()
+        chapters_links = []
+
+        for link in chapters_pages:
+            chapters_links += self._get_page_chapters_links(link)
+
+        return chapters_links
+
+    def _get_chapters_pages(self):
+        data = requests.get(self.base_link, headers=self.HEADERS)
+        bs = BeautifulSoup(data.text, "html.parser")
+
+        next = bs.find(class_="page_next").a["href"]
+
+        chapters_pages = [self.base_link, next]
+
+        while next:
+            data = requests.get(next, headers=self.HEADERS)
+            bs = BeautifulSoup(data.text, "html.parser")
+
+            next = bs.find(class_="page_next")
+            next = next.a["href"] if next.a else None
+
+            if next:
+                chapters_pages.append(next)
+
+        return chapters_pages[::-1]
+
+    def _get_page_chapters_links(self, link: str):
+        data = requests.get(link, headers=self.HEADERS)
+        bs = BeautifulSoup(data.text, "html.parser")
+
+        chapters_links = []
+        chapters_div = bs.find_all("div", {"class": "cat_block cat_line"})
+
+        for div in chapters_div:
+            chapters_links.append(div.a["href"])
+
+        return chapters_links[::-1]
 
     def _get_page_content(self, content: BeautifulSoup) -> str:
         """get all chapter content
@@ -71,11 +113,7 @@ class Ranobes:
         return data
 
     def get_book(self):
-        header = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/75.0.3770.100 Safari/537.36"
-        }
-
-        data = requests.get(link, headers=header)
+        data = requests.get("LIIIIIIIIIIIIIIIIIIIIIINK", headers=self.HEADERS)
         bs = BeautifulSoup(data.text, "html.parser")
 
         book_name = (
@@ -93,8 +131,7 @@ class Ranobes:
 
             book.add(Chapter(name=title, content=content))
 
-            next = bs.find(id="next")
-            link = next["href"] if next else None
+            next = bs.find(id="next").get("href")
             chapters_count = chapters_count - 1 if next else 0
 
         return book

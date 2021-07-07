@@ -11,8 +11,8 @@ class Indent:
 
 
 class Chapter:
-    def __init__(self, name: str = "", content: list = []):
-        self.name = name
+    def __init__(self, title: str = "", content: list = []):
+        self.title = title
         self.content = content
 
     # @property
@@ -60,7 +60,7 @@ class Book:
         content = ""
 
         for chapter in self.chapters:
-            content += "\n\n{}\n\n".format(chapter.name)
+            content += "\n\n{}\n\n".format(chapter.title)
 
             for indent in chapter.content:
                 content += indent.content + "\n\n"
